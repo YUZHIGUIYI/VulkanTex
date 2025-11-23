@@ -56,7 +56,7 @@ namespace VulkanTex
         return mipLevels;
     }
 
-    static bool CalculateMipLevels(
+    bool CalculateMipLevels(
         size_t width,
         size_t height,
         size_t& mipLevels) noexcept
@@ -80,7 +80,7 @@ namespace VulkanTex
         return true;
     }
 
-    static bool CalculateMipLevels3D(
+    bool CalculateMipLevels3D(
         size_t width,
         size_t height,
         size_t depth,
@@ -2594,7 +2594,7 @@ namespace VulkanTex
     }
 
 
-    bool GetMetadataFromTGAFile(const wchar_t* szFile, TexMetadata& metadata) noexcept
+    bool GetMetadataFromTGAFile(const char* szFile, TexMetadata& metadata) noexcept
     {
         return GetMetadataFromTGAFile(szFile, TGA_FLAGS_NONE, metadata);
     }
@@ -2606,7 +2606,7 @@ namespace VulkanTex
     }
 
 
-    bool LoadFromTGAFile(const wchar_t* szFile, TexMetadata* metadata, ScratchImage& image) noexcept
+    bool LoadFromTGAFile(const char* szFile, TexMetadata* metadata, ScratchImage& image) noexcept
     {
         return LoadFromTGAFile(szFile, TGA_FLAGS_NONE, metadata, image);
     }

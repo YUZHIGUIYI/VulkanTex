@@ -372,7 +372,7 @@ namespace VulkanTex
         DDS_FLAGS flags,
         TexMetadata& metadata) noexcept;
     bool GetMetadataFromDDSFile(
-        const wchar_t* szFile,
+        const char* szFile,
         DDS_FLAGS flags,
         TexMetadata& metadata) noexcept;
 
@@ -382,7 +382,7 @@ namespace VulkanTex
         TexMetadata& metadata,
         DDSMetaData* ddPixelFormat) noexcept;
     bool GetMetadataFromDDSFileEx(
-        const wchar_t* szFile,
+        const char* szFile,
         DDS_FLAGS flags,
         TexMetadata& metadata,
         DDSMetaData* ddPixelFormat) noexcept;
@@ -392,7 +392,7 @@ namespace VulkanTex
         TGA_FLAGS flags,
         TexMetadata& metadata) noexcept;
     bool GetMetadataFromTGAFile(
-        const wchar_t* szFile,
+        const char* szFile,
         TGA_FLAGS flags,
         TexMetadata& metadata) noexcept;
 
@@ -401,7 +401,7 @@ namespace VulkanTex
         const uint8_t* pSource, size_t size,
         TexMetadata& metadata) noexcept;
     bool GetMetadataFromTGAFile(
-        const wchar_t* szFile,
+        const char* szFile,
         TexMetadata& metadata) noexcept;
 
 #ifdef __cpp_lib_byte
@@ -463,7 +463,7 @@ namespace VulkanTex
         bool InitializeFromImage(const Image& srcImage, bool allow1D = false, CP_FLAGS flags = CP_FLAGS_NONE) noexcept;
         bool InitializeArrayFromImages(const Image* images, size_t nImages, bool allow1D = false, CP_FLAGS flags = CP_FLAGS_NONE) noexcept;
         bool InitializeCubeFromImages(const Image* images, size_t nImages, CP_FLAGS flags = CP_FLAGS_NONE) noexcept;
-        bool Initialize3DFromImages(_In_reads_(depth) const Image* images, size_t depth, CP_FLAGS flags = CP_FLAGS_NONE) noexcept;
+        bool Initialize3DFromImages(const Image* images, size_t depth, CP_FLAGS flags = CP_FLAGS_NONE) noexcept;
 
         void Release() noexcept;
 
@@ -529,7 +529,7 @@ namespace VulkanTex
         DDS_FLAGS flags,
         TexMetadata* metadata, ScratchImage& image) noexcept;
     bool LoadFromDDSFile(
-        const wchar_t* szFile,
+        const char* szFile,
         DDS_FLAGS flags,
         TexMetadata* metadata, ScratchImage& image) noexcept;
 
@@ -540,7 +540,7 @@ namespace VulkanTex
         DDSMetaData* ddPixelFormat,
         ScratchImage& image) noexcept;
     bool LoadFromDDSFileEx(
-        const wchar_t* szFile,
+        const char* szFile,
         DDS_FLAGS flags,
         TexMetadata* metadata,
         DDSMetaData* ddPixelFormat,
@@ -566,7 +566,7 @@ namespace VulkanTex
         TGA_FLAGS flags,
         TexMetadata* metadata, ScratchImage& image) noexcept;
     bool LoadFromTGAFile(
-        const wchar_t* szFile,
+        const char* szFile,
         TGA_FLAGS flags,
         TexMetadata* metadata, ScratchImage& image) noexcept;
 
@@ -581,7 +581,7 @@ namespace VulkanTex
         const uint8_t* pSource, size_t size,
         TexMetadata* metadata, ScratchImage& image) noexcept;
     bool LoadFromTGAFile(
-        const wchar_t* szFile,
+        const char* szFile,
         TexMetadata* metadata, ScratchImage& image) noexcept;
 
     bool SaveToTGAMemory(const Image& image, Blob& blob, const TexMetadata* metadata = nullptr) noexcept;
@@ -709,7 +709,5 @@ namespace VulkanTex
     // Misc helper functions
     bool IsAlphaAllOpaqueBC(const Image& cImage) noexcept;
     bool CalculateMipLevels(size_t width, size_t height, size_t& mipLevels) noexcept;
-    bool CalculateMipLevels3D(size_t width, size_t height, size_t depth,
-        size_t& mipLevels) noexcept;
-
+    bool CalculateMipLevels3D(size_t width, size_t height, size_t depth, size_t& mipLevels) noexcept;
 } // namespace VulkanTex

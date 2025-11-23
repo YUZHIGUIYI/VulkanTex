@@ -1,4 +1,5 @@
 #include <fstream>
+#include <memory>
 #include "VulkanTex.h"
 
 using namespace VulkanTex;
@@ -1416,7 +1417,8 @@ namespace
         if (ext && ext->wSize == sizeof(TGA_EXTENSION) && ext->wGammaDenominator != 0)
         {
             const auto gamma = static_cast<float>(ext->wGammaNumerator) / static_cast<float>(ext->wGammaDenominator);
-            if (fabsf(gamma - 2.2f) < GAMMA_EPSILON || fabsf(gamma - 2.4f) < GAMMA_EPSILON)
+
+            if ((std::abs(gamma - 2.2f) < GAMMA_EPSILON) || (std::abs(gamma - 2.4f) < GAMMA_EPSILON))
             {
                 sRGB = true;
             }
@@ -1487,7 +1489,7 @@ bool VulkanTex::GetMetadataFromTGAMemory(
 }
 
 
-bool VulkanTex::GetMetadataFromTGAFile(const wchar_t* szFile, TGA_FLAGS flags, TexMetadata& metadata) noexcept
+bool VulkanTex::GetMetadataFromTGAFile(const char* szFile, TGA_FLAGS flags, TexMetadata& metadata) noexcept
 {
     if (!szFile)
         return false;
@@ -1606,7 +1608,6 @@ bool VulkanTex::LoadFromTGAMemory(
 
         auto pColorMap = static_cast<const uint8_t*>(pSource) + offset;
 
-        _Analysis_assume_(size > TGA_HEADER_LEN);
         hr = ReadPalette(static_cast<const uint8_t*>(pSource), pColorMap, remaining, flags,
             palette, paletteOffset);
         if (hr == false)
@@ -1680,7 +1681,7 @@ bool VulkanTex::LoadFromTGAMemory(
 // Load a TGA file from disk
 //-------------------------------------------------------------------------------------
 bool VulkanTex::LoadFromTGAFile(
-    const wchar_t* szFile,
+    const char* szFile,
     TGA_FLAGS flags,
     TexMetadata* metadata,
     ScratchImage& image) noexcept

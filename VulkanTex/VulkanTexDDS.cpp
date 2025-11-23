@@ -3,7 +3,7 @@
 #include <fstream>
 #include <vulkan/vulkan_core.h>
 #include "VulkanTex.h"
-#include "VulkanDDS.h"
+#include "VulkanTexDDS.h"
 
 using namespace VulkanTex;
 
@@ -653,7 +653,7 @@ namespace
         return true;
     }
 
-    inline void CopyScanline24bpp(
+    void CopyScanline24bpp(
         uint8_t* pDestination,
         const uint8_t* pSource,
         size_t width) noexcept
@@ -664,7 +664,7 @@ namespace
             pDestination[1] = pSource[1]; // G
             pDestination[2] = pSource[2]; // R
 
-            pSource += 4;
+            pSource      += 4;
             pDestination += 3;
         }
     }
@@ -1898,7 +1898,7 @@ bool VulkanTex::GetMetadataFromDDSMemoryEx(
 
 
 bool VulkanTex::GetMetadataFromDDSFile(
-    const wchar_t* szFile,
+    const char* szFile,
     DDS_FLAGS flags,
     TexMetadata& metadata) noexcept
 {
@@ -1907,7 +1907,7 @@ bool VulkanTex::GetMetadataFromDDSFile(
 
 
 bool VulkanTex::GetMetadataFromDDSFileEx(
-    const wchar_t* szFile,
+    const char* szFile,
     DDS_FLAGS flags,
     TexMetadata& metadata,
     DDSMetaData* ddPixelFormat) noexcept
@@ -2066,7 +2066,7 @@ bool VulkanTex::LoadFromDDSMemoryEx(
 // Load a DDS file from disk
 //-------------------------------------------------------------------------------------
 bool VulkanTex::LoadFromDDSFile(
-    const wchar_t* szFile,
+    const char* szFile,
     DDS_FLAGS flags,
     TexMetadata* metadata,
     ScratchImage& image) noexcept
@@ -2075,7 +2075,7 @@ bool VulkanTex::LoadFromDDSFile(
 }
 
 bool VulkanTex::LoadFromDDSFileEx(
-    const wchar_t* szFile,
+    const char* szFile,
     DDS_FLAGS flags,
     TexMetadata* metadata,
     DDSMetaData* ddPixelFormat,
