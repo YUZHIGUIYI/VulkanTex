@@ -914,7 +914,7 @@ bool VulkanTex::EncodeDDSHeader(
             if (metadata.width > UINT32_MAX)
                 return false;
 
-            header->width = static_cast<uint32_t>(metadata.width);
+            header->width  = static_cast<uint32_t>(metadata.width);
             header->height = header->depth = 1;
             break;
         }
@@ -925,8 +925,8 @@ bool VulkanTex::EncodeDDSHeader(
                 return false;
 
             header->height = static_cast<uint32_t>(metadata.height);
-            header->width = static_cast<uint32_t>(metadata.width);
-            header->depth = 1;
+            header->width  = static_cast<uint32_t>(metadata.width);
+            header->depth  = 1;
 
             if (metadata.IsCubemap())
             {
@@ -946,8 +946,8 @@ bool VulkanTex::EncodeDDSHeader(
             header->flags |= DDS_HEADER_FLAGS_VOLUME;
             header->caps2 |= DDS_FLAGS_VOLUME;
             header->height = static_cast<uint32_t>(metadata.height);
-            header->width = static_cast<uint32_t>(metadata.width);
-            header->depth = static_cast<uint32_t>(metadata.depth);
+            header->width  = static_cast<uint32_t>(metadata.width);
+            header->depth  = static_cast<uint32_t>(metadata.depth);
             break;
         }
 
@@ -957,8 +957,8 @@ bool VulkanTex::EncodeDDSHeader(
 
     size_t rowPitch, slicePitch;
     bool hr = ComputePitch(metadata.format,
-        metadata.width, metadata.height,
-        rowPitch, slicePitch, pitchFlags);
+                    metadata.width, metadata.height,
+                        rowPitch, slicePitch, pitchFlags);
 
     if (hr == false)
         return hr;
@@ -2578,8 +2578,9 @@ bool VulkanTex::SaveToDDSFile(
         return false;
 
     // Create DDS Header
-    uint8_t header[DDS_DX10_HEADER_SIZE];
-    size_t required = 0;
+    uint8_t header[DDS_DX10_HEADER_SIZE] = {};
+    size_t  required                     = 0;
+
     bool hr = EncodeDDSHeader(metadata, flags, header, DDS_DX10_HEADER_SIZE, required);
 
     if (hr == false)
@@ -2600,7 +2601,7 @@ bool VulkanTex::SaveToDDSFile(
                            (flags & DDS_FLAGS_FORCE_24BPP_RGB) &&
                            !(flags & (DDS_FLAGS_FORCE_DX10_EXT | DDS_FLAGS_FORCE_DX10_EXT_MISC2))) != 0;
 
-    std::unique_ptr<uint8_t[]> tempRow;
+    std::unique_ptr<uint8_t[]> tempRow = nullptr;
 
     if (use24bpp)
     {
@@ -2640,31 +2641,39 @@ bool VulkanTex::SaveToDDSFile(
                     assert(images[index].rowPitch > 0);
                     assert(images[index].slicePitch > 0);
 
-                    size_t ddsRowPitch, ddsSlicePitch;
+                    size_t ddsRowPitch   = 0;
+                    size_t ddsSlicePitch = 0;
+
                     hr = ComputePitch(metadata.format,
-                                images[index].width, images[index].height,
-                                ddsRowPitch, ddsSlicePitch,
-                                (use24bpp) ? CP_FLAGS_24BPP : CP_FLAGS_NONE);
+                                      images[index].width, images[index].height,
+                                      ddsRowPitch, ddsSlicePitch,
+                                      (use24bpp) ? CP_FLAGS_24BPP : CP_FLAGS_NONE);
+
                     if (hr == false)
                         return hr;
 
                     if ((images[index].slicePitch == ddsSlicePitch) && (ddsSlicePitch <= UINT32_MAX))
                     {
-                        outFile.write(reinterpret_cast<char*>(images[index].pixels), static_cast<std::streamsize>(ddsSlicePitch));
+                        outFile.write(reinterpret_cast<char*>(images[index].pixels),
+                                      static_cast<std::streamsize>(ddsSlicePitch));
+
                         if (!outFile)
                             return false;
                     }
                     else if (use24bpp)
                     {
-                        const size_t rowPitch = images[index].rowPitch;
-                        const uint8_t * __restrict sPtr = images[index].pixels;
+                        const size_t               rowPitch = images[index].rowPitch;
+                        const uint8_t * __restrict sPtr     = images[index].pixels;
 
                         assert(ddsRowPitch <= metadata.width * 3u);
+
                         for (size_t j = 0; j < images[index].height; ++j)
                         {
                             CopyScanline24bpp(tempRow.get(), sPtr, images[index].width);
 
-                            outFile.write(reinterpret_cast<const char*>(tempRow.get()), static_cast<std::streamsize>(ddsRowPitch));
+                            outFile.write(reinterpret_cast<const char*>(tempRow.get()),
+                                          static_cast<std::streamsize>(ddsRowPitch));
+
                             if (!outFile)
                                 return false;
 
@@ -2691,6 +2700,7 @@ bool VulkanTex::SaveToDDSFile(
                         for (size_t j = 0; j < lines; ++j)
                         {
                             outFile.write(reinterpret_cast<const char*>(sPtr), static_cast<std::streamsize>(ddsRowPitch));
+
                             if (!outFile)
                                 return false;
 
@@ -2737,7 +2747,8 @@ bool VulkanTex::SaveToDDSFile(
 
                     if ((images[index].slicePitch == ddsSlicePitch) && (ddsSlicePitch <= UINT32_MAX))
                     {
-                        outFile.write(reinterpret_cast<char*>(images[index].pixels), static_cast<std::streamsize>(ddsSlicePitch));
+                        outFile.write(reinterpret_cast<char*>(images[index].pixels),
+                                      static_cast<std::streamsize>(ddsSlicePitch));
 
                         if (!outFile)
                             return false;
@@ -2748,11 +2759,14 @@ bool VulkanTex::SaveToDDSFile(
                         const uint8_t * __restrict sPtr = images[index].pixels;
 
                         assert(ddsRowPitch <= metadata.width * 3u);
+
                         for (size_t j = 0; j < images[index].height; ++j)
                         {
                             CopyScanline24bpp(tempRow.get(), sPtr, images[index].width);
 
-                            outFile.write(reinterpret_cast<const char*>(tempRow.get()), static_cast<std::streamsize>(ddsRowPitch));
+                            outFile.write(reinterpret_cast<const char*>(tempRow.get()),
+                                          static_cast<std::streamsize>(ddsRowPitch));
+
                             if (!outFile)
                                 return false;
 
@@ -2776,7 +2790,9 @@ bool VulkanTex::SaveToDDSFile(
 
                         for (size_t j = 0; j < lines; ++j)
                         {
-                            outFile.write(reinterpret_cast<const char*>(sPtr), static_cast<std::streamsize>(ddsRowPitch));
+                            outFile.write(reinterpret_cast<const char*>(sPtr),
+                                          static_cast<std::streamsize>(ddsRowPitch));
+
                             if (!outFile)
                                 return false;
 

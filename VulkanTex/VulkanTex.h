@@ -9,6 +9,7 @@
 
 namespace VulkanTex
 {
+    // Format type
     enum FORMAT_TYPE : uint32_t
     {
         FORMAT_TYPE_TYPELESS,
@@ -313,8 +314,9 @@ namespace VulkanTex
 
     size_t BytesPerBlock(VkFormat fmt) noexcept;
 
-    bool ComputePitch(VkFormat fmt, size_t width, size_t height,
-                    size_t& rowPitch, size_t& slicePitch, CP_FLAGS flags = CP_FLAGS_NONE) noexcept;
+    bool ComputePitch(
+        VkFormat fmt, size_t width, size_t height,
+        size_t& rowPitch, size_t& slicePitch, CP_FLAGS flags = CP_FLAGS_NONE) noexcept;
 
     size_t ComputeScanlines(VkFormat fmt, size_t height) noexcept;
 

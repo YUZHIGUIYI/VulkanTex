@@ -5,7 +5,6 @@
 
 namespace VulkanTex
 {
-
 #pragma pack(push,1)
 
     constexpr uint32_t DDS_MAGIC = 0x20534444; // "DDS "
@@ -271,11 +270,11 @@ namespace VulkanTex
 
 #pragma pack(pop)
 
-    static_assert(sizeof(DDS_PIXELFORMAT) == 32, "DDS pixel format size mismatch");
-    static_assert(sizeof(DDS_HEADER) == 124, "DDS Header size mismatch");
+    static_assert(sizeof(DDS_PIXELFORMAT)  == 32, "DDS pixel format size mismatch");
+    static_assert(sizeof(DDS_HEADER)       == 124, "DDS Header size mismatch");
     static_assert(sizeof(DDS_HEADER_DXT10) == 20, "DDS DX10 Extended Header size mismatch");
 
-    constexpr size_t DDS_MIN_HEADER_SIZE = sizeof(uint32_t) + sizeof(DDS_HEADER);
+    constexpr size_t DDS_MIN_HEADER_SIZE  = sizeof(uint32_t) + sizeof(DDS_HEADER);
     constexpr size_t DDS_DX10_HEADER_SIZE = sizeof(uint32_t) + sizeof(DDS_HEADER) + sizeof(DDS_HEADER_DXT10);
     static_assert(DDS_DX10_HEADER_SIZE > DDS_MIN_HEADER_SIZE, "DDS DX10 Header should be larger than standard header");
-} // namespace
+} // namespace VulkanTex
