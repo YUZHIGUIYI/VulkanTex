@@ -463,7 +463,7 @@ namespace VulkanTex
         bool InitializeFromImage(const Image& srcImage, bool allow1D = false, CP_FLAGS flags = CP_FLAGS_NONE) noexcept;
         bool InitializeArrayFromImages(const Image* images, size_t nImages, bool allow1D = false, CP_FLAGS flags = CP_FLAGS_NONE) noexcept;
         bool InitializeCubeFromImages(const Image* images, size_t nImages, CP_FLAGS flags = CP_FLAGS_NONE) noexcept;
-        bool Initialize3DFromImages(_In_reads_(depth) const Image* images, size_t depth, CP_FLAGS flags = CP_FLAGS_NONE) noexcept;
+        bool Initialize3DFromImages(const Image* images, size_t depth, CP_FLAGS flags = CP_FLAGS_NONE) noexcept;
 
         void Release() noexcept;
 

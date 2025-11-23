@@ -56,7 +56,7 @@ namespace VulkanTex
         return mipLevels;
     }
 
-    static bool CalculateMipLevels(
+    bool CalculateMipLevels(
         size_t width,
         size_t height,
         size_t& mipLevels) noexcept
@@ -80,7 +80,7 @@ namespace VulkanTex
         return true;
     }
 
-    static bool CalculateMipLevels3D(
+    bool CalculateMipLevels3D(
         size_t width,
         size_t height,
         size_t depth,
