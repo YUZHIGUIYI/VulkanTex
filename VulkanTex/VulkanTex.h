@@ -9,6 +9,38 @@
 
 namespace VulkanTex
 {
+    // Subresource information
+    struct SubresourceInfo
+    {
+        uint32_t     layer;
+        uint32_t     mipLevel;
+        uint32_t     width;
+        uint32_t     height;
+        VkDeviceSize memoryOffset;
+        VkDeviceSize memorySize;
+    };
+
+    // Captured resource information
+    struct CapturedResourceInfo
+    {
+        uint8_t*         mappedData;
+        SubresourceInfo* subresourceInfoArray;
+        uint32_t         subresourceInfoArraySize;
+        uint32_t         planeCount;
+        uint32_t         layerCount;
+        uint32_t         mipLevels;
+        VkImageType      imageType;
+        VkFormat         format;
+    };
+
+    // Memory copy information
+    struct MemoryCopyInfo
+    {
+        uint8_t* data;
+        size_t   rowPitch;
+        size_t   slicePitch;
+    };
+
     // Format type
     enum FORMAT_TYPE : uint32_t
     {
@@ -322,6 +354,14 @@ namespace VulkanTex
 
     VkFormat MakeSRGB(VkFormat fmt) noexcept;
 
+    // Row-by-row memcpy
+    void MemcpySubresource(
+        MemoryCopyInfo*       dstCopyInfo,
+        const MemoryCopyInfo* srcCopyInfo,
+        size_t                rowSizeInBytes,
+        uint32_t              numRows,
+        uint32_t              numSlices) noexcept;
+
     struct TexMetadata
     {
         size_t          width;
@@ -555,6 +595,10 @@ namespace VulkanTex
         DDS_FLAGS flags,
         Blob& blob) noexcept;
 
+    bool SaveToDDSFile(
+        CapturedResourceInfo* capturedResourceInfo,
+        DDS_FLAGS             flags,
+        const char*           fileName) noexcept;
     bool SaveToDDSFile(const Image& image, DDS_FLAGS flags, const char* szFile) noexcept;
     bool SaveToDDSFile(
         const Image* images, size_t nimages, const TexMetadata& metadata,

@@ -132,7 +132,9 @@ namespace VulkanTex
 
                     for (size_t level = 0; level < metadata.mipLevels; ++level)
                     {
-                        size_t rowPitch, slicePitch;
+                        size_t rowPitch   = 0;
+                        size_t slicePitch = 0;
+
                         bool hr = ComputePitch(metadata.format, w, h, rowPitch, slicePitch, cpFlags);
 
                         if (hr == false)
@@ -162,7 +164,9 @@ namespace VulkanTex
 
                 for (size_t level = 0; level < metadata.mipLevels; ++level)
                 {
-                    size_t rowPitch, slicePitch;
+                    size_t rowPitch   = 0;
+                    size_t slicePitch = 0;
+
                     bool hr = ComputePitch(metadata.format, w, h, rowPitch, slicePitch, cpFlags);
 
                     if (hr == false)
@@ -552,7 +556,7 @@ namespace VulkanTex
         static_assert(sizeof(size_t) == 8, "Not a 64-bit platform!");
     #endif
 
-        rowPitch = static_cast<size_t>(pitch);
+        rowPitch   = static_cast<size_t>(pitch);
         slicePitch = static_cast<size_t>(slice);
 
         return true;
@@ -626,6 +630,28 @@ namespace VulkanTex
 
             default:
                 return fmt;
+        }
+    }
+
+    // Row-by-row memcpy
+    void MemcpySubresource(
+        MemoryCopyInfo*       dstCopyInfo,
+        const MemoryCopyInfo* srcCopyInfo,
+        size_t                rowSizeInBytes,
+        uint32_t              numRows,
+        uint32_t              numSlices) noexcept
+    {
+        for (uint32_t z = 0; z < numSlices; ++z)
+        {
+            auto pDstSlice = dstCopyInfo->data + dstCopyInfo->slicePitch * static_cast<size_t>(z);
+            auto pSrcSlice = srcCopyInfo->data + srcCopyInfo->slicePitch * static_cast<size_t>(z);
+
+            for (uint32_t y = 0; y < numRows; ++y)
+            {
+                memcpy(pDstSlice + dstCopyInfo->rowPitch * static_cast<size_t>(y),
+                       pSrcSlice + srcCopyInfo->rowPitch * static_cast<size_t>(y),
+                       rowSizeInBytes);
+            }
         }
     }
 
@@ -712,15 +738,15 @@ namespace VulkanTex
 
         Release();
 
-        m_metadata.width = mdata.width;
-        m_metadata.height = mdata.height;
-        m_metadata.depth = mdata.depth;
-        m_metadata.arraySize = mdata.arraySize;
-        m_metadata.mipLevels = mipLevels;
-        m_metadata.miscFlags = mdata.miscFlags;
+        m_metadata.width      = mdata.width;
+        m_metadata.height     = mdata.height;
+        m_metadata.depth      = mdata.depth;
+        m_metadata.arraySize  = mdata.arraySize;
+        m_metadata.mipLevels  = mipLevels;
+        m_metadata.miscFlags  = mdata.miscFlags;
         m_metadata.miscFlags2 = mdata.miscFlags2;
-        m_metadata.format = mdata.format;
-        m_metadata.dimension = mdata.dimension;
+        m_metadata.format     = mdata.format;
+        m_metadata.dimension  = mdata.dimension;
 
         size_t           pixelSize = 0;
         size_t           nimages   = 0;
@@ -2569,6 +2595,148 @@ namespace VulkanTex
         return SaveToDDSMemory(&image, 1, mdata, flags, blob);
     }
 
+    bool SaveToDDSFile(
+        CapturedResourceInfo* capturedResourceInfo,
+        DDS_FLAGS             flags,
+        const char*           fileName) noexcept
+    {
+        if ((capturedResourceInfo                           == nullptr) ||
+            (capturedResourceInfo->mappedData               == nullptr) ||
+            (capturedResourceInfo->subresourceInfoArray     == nullptr) ||
+            (capturedResourceInfo->subresourceInfoArraySize == 0) ||
+            (fileName                                       == nullptr))
+        {
+            return false;
+        }
+
+        ScratchImage scratchImageResult{};
+        TexMetadata  mdata{};
+        bool         result = false;
+
+        switch (capturedResourceInfo->imageType)
+        {
+            case VK_IMAGE_TYPE_1D:
+            {
+                // The first subresource information
+                mdata.width      = capturedResourceInfo->subresourceInfoArray[0].width;
+                mdata.height     = mdata.depth = 1;
+                mdata.arraySize  = capturedResourceInfo->layerCount;
+                mdata.mipLevels  = capturedResourceInfo->mipLevels;
+                mdata.miscFlags  = 0;
+                mdata.miscFlags2 = 0;
+                mdata.format     = capturedResourceInfo->format;
+                mdata.dimension  = TEX_DIMENSION_TEXTURE1D;
+
+                result = scratchImageResult.Initialize(mdata);
+
+                if (result == false)
+                {
+                    return result;
+                }
+
+                break;
+            }
+
+            case VK_IMAGE_TYPE_2D:
+            {
+                // The first subresource information
+                mdata.width      = capturedResourceInfo->subresourceInfoArray[0].width;
+                mdata.height     = capturedResourceInfo->subresourceInfoArray[0].height;
+                mdata.depth      = 1;
+                mdata.arraySize  = capturedResourceInfo->layerCount;
+                mdata.mipLevels  = capturedResourceInfo->mipLevels;
+                mdata.miscFlags  = 0;  // Do not consider cudemap currently
+                mdata.miscFlags2 = 0;
+                mdata.format     = capturedResourceInfo->format;
+                mdata.dimension  = TEX_DIMENSION_TEXTURE2D;
+
+                result = scratchImageResult.Initialize(mdata);
+
+                if (result == false)
+                {
+                    return result;
+                }
+
+                break;
+            }
+
+            case VK_IMAGE_TYPE_3D:
+            {
+                mdata.width      = capturedResourceInfo->subresourceInfoArray[0].width;
+                mdata.height     = capturedResourceInfo->subresourceInfoArray[0].height;
+                mdata.depth      = capturedResourceInfo->layerCount;  // Do not consider 3D image currently
+                mdata.arraySize  = capturedResourceInfo->layerCount;
+                mdata.mipLevels  = capturedResourceInfo->mipLevels;
+                mdata.miscFlags  = 0;
+                mdata.miscFlags2 = 0;
+                mdata.format     = capturedResourceInfo->format;
+                mdata.dimension  = TEX_DIMENSION_TEXTURE3D;
+
+                result = scratchImageResult.Initialize(mdata);
+
+                if (result == false)
+                {
+                    return result;
+                }
+
+                break;
+            }
+
+            default:
+            {
+                break;
+            }
+        }
+
+        uint8_t* mappedData = capturedResourceInfo->mappedData;
+        uint32_t dindex     = 0;
+
+        for (uint32_t plane = 0U; plane < capturedResourceInfo->planeCount; ++plane)
+        {
+            for (uint32_t item = 0U; item < capturedResourceInfo->layerCount; ++item)
+            {
+                for (uint32_t level = 0U; level < capturedResourceInfo->mipLevels; ++level)
+                {
+                    const Image* img = scratchImageResult.GetImage(level, item, 0);
+
+                    if ((img         == nullptr) ||
+                        (img->pixels == nullptr))
+                    {
+                        return false;
+                    }
+
+                    MemoryCopyInfo dstDataInfo = {};
+                    MemoryCopyInfo srcDataInfo = {};
+                    SubresourceInfo subresInfo = capturedResourceInfo->subresourceInfoArray[dindex];
+                    size_t         memOffset   = subresInfo.memoryOffset;
+                    size_t         memSize     = subresInfo.memorySize;
+
+                    dstDataInfo.data       = img->pixels;
+                    dstDataInfo.rowPitch   = img->rowPitch;
+                    dstDataInfo.slicePitch = img->slicePitch;
+                    srcDataInfo.data       = mappedData + memOffset;
+                    srcDataInfo.rowPitch   = BitsPerPixel(capturedResourceInfo->format) / 8;
+                    srcDataInfo.slicePitch = memSize;
+
+                    MemcpySubresource(&dstDataInfo,
+                                      &srcDataInfo,
+                                      srcDataInfo.rowPitch,
+                                      subresInfo.height,
+                                      1); // Do not consider slice now
+
+                    ++dindex;
+                }
+            }
+        }
+
+        result = SaveToDDSFile(scratchImageResult.GetImages(),
+                               scratchImageResult.GetImageCount(),
+                               mdata,
+                               flags,
+                               fileName);
+
+        return result;
+    }
 
     bool SaveToDDSFile(const Image& image, DDS_FLAGS flags, const char* szFile) noexcept
     {
