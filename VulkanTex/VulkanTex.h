@@ -5,8 +5,6 @@
 #include <utility>
 #include <vulkan/vulkan.hpp>
 
-#define VUlKAN_TEX_VERSION 209
-
 namespace VulkanTex
 {
     // Subresource information
@@ -29,7 +27,7 @@ namespace VulkanTex
         uint32_t         planeCount;
         uint32_t         layerCount;
         uint32_t         mipLevels;
-        VkImageType      imageType;
+        VkImageViewType  imageViewType;
         VkFormat         format;
     };
 
@@ -39,17 +37,6 @@ namespace VulkanTex
         uint8_t* data;
         size_t   rowPitch;
         size_t   slicePitch;
-    };
-
-    // Format type
-    enum FORMAT_TYPE : uint32_t
-    {
-        FORMAT_TYPE_TYPELESS,
-        FORMAT_TYPE_FLOAT,
-        FORMAT_TYPE_UNORM,
-        FORMAT_TYPE_SNORM,
-        FORMAT_TYPE_UINT,
-        FORMAT_TYPE_SINT,
     };
 
     //---------------------------------------------------------------------------------
@@ -407,62 +394,6 @@ namespace VulkanTex
         bool IsDX10() const noexcept { return (fourCC == 0x30315844); }
     };
 
-    bool GetMetadataFromDDSMemory(
-        const uint8_t* pSource, size_t size,
-        DDS_FLAGS flags,
-        TexMetadata& metadata) noexcept;
-    bool GetMetadataFromDDSFile(
-        const char* szFile,
-        DDS_FLAGS flags,
-        TexMetadata& metadata) noexcept;
-
-    bool GetMetadataFromDDSMemoryEx(
-        const uint8_t* pSource, size_t size,
-        DDS_FLAGS flags,
-        TexMetadata& metadata,
-        DDSMetaData* ddPixelFormat) noexcept;
-    bool GetMetadataFromDDSFileEx(
-        const char* szFile,
-        DDS_FLAGS flags,
-        TexMetadata& metadata,
-        DDSMetaData* ddPixelFormat) noexcept;
-
-    bool GetMetadataFromTGAMemory(
-        const uint8_t* pSource, size_t size,
-        TGA_FLAGS flags,
-        TexMetadata& metadata) noexcept;
-    bool GetMetadataFromTGAFile(
-        const char* szFile,
-        TGA_FLAGS flags,
-        TexMetadata& metadata) noexcept;
-
-    // Compatability helpers
-    bool GetMetadataFromTGAMemory(
-        const uint8_t* pSource, size_t size,
-        TexMetadata& metadata) noexcept;
-    bool GetMetadataFromTGAFile(
-        const char* szFile,
-        TexMetadata& metadata) noexcept;
-
-#ifdef __cpp_lib_byte
-    bool GetMetadataFromDDSMemory(
-        const std::byte* pSource, size_t size,
-        DDS_FLAGS flags,
-        TexMetadata& metadata) noexcept;
-    bool GetMetadataFromDDSMemoryEx(
-        const std::byte* pSource, size_t size,
-        DDS_FLAGS flags,
-        TexMetadata& metadata,
-        DDSMetaData* ddPixelFormat) noexcept;
-    bool GetMetadataFromHDRMemory(
-        const std::byte* pSource, size_t size,
-        TexMetadata& metadata) noexcept;
-    bool GetMetadataFromTGAMemory(
-        const std::byte* pSource, size_t size,
-        TGA_FLAGS flags,
-        TexMetadata& metadata) noexcept;
-#endif // __cpp_lib_byte
-
     //---------------------------------------------------------------------------------
     // Bitmap image container
     struct Image
@@ -561,31 +492,8 @@ namespace VulkanTex
         size_t   m_size;
     };
 
-    //---------------------------------------------------------------------------------
     // Image I/O
     // DDS operations
-    bool LoadFromDDSMemory(
-        const uint8_t* pSource, size_t size,
-        DDS_FLAGS flags,
-        TexMetadata* metadata, ScratchImage& image) noexcept;
-    bool LoadFromDDSFile(
-        const char* szFile,
-        DDS_FLAGS flags,
-        TexMetadata* metadata, ScratchImage& image) noexcept;
-
-    bool LoadFromDDSMemoryEx(
-        const uint8_t* pSource, size_t size,
-        DDS_FLAGS flags,
-        TexMetadata* metadata,
-        DDSMetaData* ddPixelFormat,
-        ScratchImage& image) noexcept;
-    bool LoadFromDDSFileEx(
-        const char* szFile,
-        DDS_FLAGS flags,
-        TexMetadata* metadata,
-        DDSMetaData* ddPixelFormat,
-        ScratchImage& image) noexcept;
-
     bool SaveToDDSMemory(
         const Image& image,
         DDS_FLAGS flags,
@@ -603,52 +511,6 @@ namespace VulkanTex
     bool SaveToDDSFile(
         const Image* images, size_t nimages, const TexMetadata& metadata,
         DDS_FLAGS flags, const char* szFile) noexcept;
-
-    // TGA operations
-    bool LoadFromTGAMemory(
-        const uint8_t* pSource, size_t size,
-        TGA_FLAGS flags,
-        TexMetadata* metadata, ScratchImage& image) noexcept;
-    bool LoadFromTGAFile(
-        const char* szFile,
-        TGA_FLAGS flags,
-        TexMetadata* metadata, ScratchImage& image) noexcept;
-
-    bool SaveToTGAMemory(const Image& image,
-        TGA_FLAGS flags,
-        Blob& blob, const TexMetadata* metadata = nullptr) noexcept;
-    bool SaveToTGAFile(const Image& image, TGA_FLAGS flags,
-                        const char* szFile, const TexMetadata* metadata = nullptr) noexcept;
-
-    // Compatability helpers
-    bool LoadFromTGAMemory(
-        const uint8_t* pSource, size_t size,
-        TexMetadata* metadata, ScratchImage& image) noexcept;
-    bool LoadFromTGAFile(
-        const char* szFile,
-        TexMetadata* metadata, ScratchImage& image) noexcept;
-
-    bool SaveToTGAMemory(const Image& image, Blob& blob, const TexMetadata* metadata = nullptr) noexcept;
-    bool SaveToTGAFile(const Image& image, const char* szFile, const TexMetadata* metadata = nullptr) noexcept;
-
-#ifdef __cpp_lib_byte
-    bool LoadFromDDSMemory(
-        const std::byte* pSource, size_t size,
-        DDS_FLAGS flags,
-        TexMetadata* metadata, ScratchImage& image) noexcept;
-    bool LoadFromDDSMemoryEx(
-        const std::byte* pSource, size_t size,
-        DDS_FLAGS flags,
-        TexMetadata* metadata,
-        DDSMetaData* ddPixelFormat,
-        ScratchImage& image) noexcept;
-    bool LoadFromTGAMemory(
-        const std::byte* pSource, size_t size,
-        TGA_FLAGS flags,
-        TexMetadata* metadata, ScratchImage& image) noexcept;
-#endif // __cpp_lib_byte
-
-    //---------------------------------------------------------------------------------
     // DDS helper functions
     bool EncodeDDSHeader(
         const TexMetadata& metadata, DDS_FLAGS flags,
@@ -666,11 +528,7 @@ namespace VulkanTex
         std::nullptr_t, size_t maxsize,
         size_t& required) noexcept;
 #endif
-} // namespace VulkanTex
 
-namespace VulkanTex
-{
-    //---------------------------------------------------------------------------------
     // Image helper functions
     bool DetermineImageArray(
         const TexMetadata& metadata, CP_FLAGS cpFlags,
@@ -681,75 +539,6 @@ namespace VulkanTex
         const TexMetadata& metadata, CP_FLAGS cpFlags,
         Image* images, size_t nImages) noexcept;
 
-    //---------------------------------------------------------------------------------
-    // Conversion helper functions
-    enum TEXP_SCANLINE_FLAGS : uint32_t
-    {
-        TEXP_SCANLINE_NONE = 0,
-
-        TEXP_SCANLINE_SETALPHA = 0x1,
-        // Set alpha channel to known opaque value
-
-        TEXP_SCANLINE_LEGACY = 0x2,
-        // Enables specific legacy format conversion cases
-    };
-
-    enum CONVERT_FLAGS : uint32_t
-    {
-        CONVF_FLOAT = 0x1,
-        CONVF_UNORM = 0x2,
-        CONVF_UINT = 0x4,
-        CONVF_SNORM = 0x8,
-        CONVF_SINT = 0x10,
-        CONVF_DEPTH = 0x20,
-        CONVF_STENCIL = 0x40,
-        CONVF_SHAREDEXP = 0x80,
-        CONVF_BGR = 0x100,
-        CONVF_XR = 0x200,
-        CONVF_PACKED = 0x400,
-        CONVF_BC = 0x800,
-        CONVF_YUV = 0x1000,
-        CONVF_POS_ONLY = 0x2000,
-        CONVF_R = 0x10000,
-        CONVF_G = 0x20000,
-        CONVF_B = 0x40000,
-        CONVF_A = 0x80000,
-        CONVF_RGB_MASK = 0x70000,
-        CONVF_RGBA_MASK = 0xF0000,
-    };
-
-    uint32_t GetConvertFlags(VkFormat format) noexcept;
-
-    void CopyScanline(
-        void* pDestination, size_t outSize,
-        const void* pSource, size_t inSize,
-        VkFormat format, uint32_t tflags) noexcept;
-
-    void SwizzleScanline(
-        void* pDestination, size_t outSize,
-        const void* pSource, size_t inSize,
-        VkFormat format, uint32_t tflags) noexcept;
-
-    bool ExpandScanline(
-        void* pDestination, size_t outSize,
-        VkFormat outFormat,
-        const void* pSource, size_t inSize,
-        VkFormat inFormat, uint32_t tflags) noexcept;
-
-    bool ConvertToR32G32B32A32(const Image& srcImage, ScratchImage& image) noexcept;
-
-    bool ConvertFromR32G32B32A32(const Image& srcImage, const Image& destImage) noexcept;
-    bool ConvertFromR32G32B32A32(
-        const Image& srcImage, VkFormat format, ScratchImage& image) noexcept;
-    bool ConvertFromR32G32B32A32(
-        const Image* srcImages, size_t nimages, const TexMetadata& metadata,
-        VkFormat format, ScratchImage& result) noexcept;
-
-    bool ConvertToR16G16B16A16(const Image& srcImage, ScratchImage& image) noexcept;
-
-    bool ConvertFromR16G16B16A16(const Image& srcImage, const Image& destImage) noexcept;
-
-    //---------------------------------------------------------------------------------
     // Misc helper functions
     bool IsAlphaAllOpaqueBC(const Image& cImage) noexcept;
     bool CalculateMipLevels(size_t width, size_t height, size_t& mipLevels) noexcept;

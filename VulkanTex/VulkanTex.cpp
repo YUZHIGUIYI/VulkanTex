@@ -695,7 +695,10 @@ namespace VulkanTex
         {
             case TEX_DIMENSION_TEXTURE1D:
             {
-                if (!mdata.width || mdata.height != 1 || mdata.depth != 1 || !mdata.arraySize)
+                if ((!mdata.width) ||
+                    (mdata.height != 1) ||
+                    (mdata.depth != 1) ||
+                    (!mdata.arraySize))
                     return false;
 
                 if (!CalculateMipLevels(mdata.width, 1, mipLevels))
@@ -706,7 +709,10 @@ namespace VulkanTex
 
             case TEX_DIMENSION_TEXTURE2D:
             {
-                if (!mdata.width || !mdata.height || mdata.depth != 1 || !mdata.arraySize)
+                if ((!mdata.width) ||
+                    (!mdata.height) ||
+                    (mdata.depth != 1) ||
+                    (!mdata.arraySize))
                     return false;
 
                 if (mdata.IsCubemap())
@@ -723,7 +729,10 @@ namespace VulkanTex
 
             case TEX_DIMENSION_TEXTURE3D:
             {
-                if (!mdata.width || !mdata.height || !mdata.depth || mdata.arraySize != 1)
+                if ((!mdata.width) ||
+                    (!mdata.height) ||
+                    (!mdata.depth) ||
+                    (mdata.arraySize != 1))
                     return false;
 
                 if (!CalculateMipLevels3D(mdata.width, mdata.height, mdata.depth, mipLevels))
@@ -796,7 +805,6 @@ namespace VulkanTex
         return true;
     }
 
-    
     bool ScratchImage::Initialize1D(VkFormat fmt, size_t length, size_t arraySize, size_t mipLevels, CP_FLAGS flags) noexcept
     {
         if (!length || !arraySize)
@@ -813,7 +821,6 @@ namespace VulkanTex
         return true;
     }
 
-    
     bool ScratchImage::Initialize2D(VkFormat fmt, size_t width, size_t height, size_t arraySize, size_t mipLevels, CP_FLAGS flags) noexcept
     {
         if (!IsValid(fmt) || !width || !height || !arraySize)
@@ -884,7 +891,6 @@ namespace VulkanTex
         return true;
     }
 
-    
     bool ScratchImage::Initialize3D(VkFormat fmt, size_t width, size_t height, size_t depth, size_t mipLevels, CP_FLAGS flags) noexcept
     {
         if (!IsValid(fmt) || !width || !height || !depth)
@@ -960,7 +966,6 @@ namespace VulkanTex
         return true;
     }
 
-    
     bool ScratchImage::InitializeCube(VkFormat fmt, size_t width, size_t height, size_t nCubes, size_t mipLevels, CP_FLAGS flags) noexcept
     {
         if (!width || !height || !nCubes)
@@ -976,7 +981,6 @@ namespace VulkanTex
         return true;
     }
 
-    
     bool ScratchImage::InitializeFromImage(const Image& srcImage, bool allow1D, CP_FLAGS flags) noexcept
     {
         bool hr = (srcImage.height > 1 || !allow1D)
@@ -1013,7 +1017,6 @@ namespace VulkanTex
         return true;
     }
 
-    
     bool ScratchImage::InitializeArrayFromImages(const Image* images, size_t nImages, bool allow1D, CP_FLAGS flags) noexcept
     {
         if (!images || !nImages)
@@ -1073,7 +1076,6 @@ namespace VulkanTex
         return true;
     }
 
-    
     bool ScratchImage::InitializeCubeFromImages(const Image* images, size_t nImages, CP_FLAGS flags) noexcept
     {
         if (!images || !nImages)
@@ -1092,7 +1094,6 @@ namespace VulkanTex
         return true;
     }
 
-    
     bool ScratchImage::Initialize3DFromImages(const Image* images, size_t depth, CP_FLAGS flags) noexcept
     {
         if (!images || !depth)
@@ -1176,7 +1177,6 @@ namespace VulkanTex
         memset(&m_metadata, 0, sizeof(m_metadata));
     }
 
-    
     bool ScratchImage::OverrideFormat(VkFormat f) noexcept
     {
         if (!m_image)
@@ -1195,7 +1195,6 @@ namespace VulkanTex
         return true;
     }
 
-    
     const Image* ScratchImage::GetImage(size_t mip, size_t item, size_t slice) const noexcept
     {
         if (mip >= m_metadata.mipLevels)
@@ -2609,13 +2608,14 @@ namespace VulkanTex
             return false;
         }
 
-        ScratchImage scratchImageResult{};
-        TexMetadata  mdata{};
-        bool         result = false;
+        ScratchImage scratchImageResult = {};
+        TexMetadata  mdata              = {};
+        bool         result             = false;
 
-        switch (capturedResourceInfo->imageType)
+        switch (capturedResourceInfo->imageViewType)
         {
-            case VK_IMAGE_TYPE_1D:
+            case VK_IMAGE_VIEW_TYPE_1D:
+            case VK_IMAGE_VIEW_TYPE_1D_ARRAY:
             {
                 // The first subresource information
                 mdata.width      = capturedResourceInfo->subresourceInfoArray[0].width;
@@ -2637,7 +2637,10 @@ namespace VulkanTex
                 break;
             }
 
-            case VK_IMAGE_TYPE_2D:
+            case VK_IMAGE_VIEW_TYPE_2D:
+            case VK_IMAGE_VIEW_TYPE_2D_ARRAY:
+            case VK_IMAGE_VIEW_TYPE_CUBE:
+            case VK_IMAGE_VIEW_TYPE_CUBE_ARRAY:
             {
                 // The first subresource information
                 mdata.width      = capturedResourceInfo->subresourceInfoArray[0].width;
@@ -2645,7 +2648,9 @@ namespace VulkanTex
                 mdata.depth      = 1;
                 mdata.arraySize  = capturedResourceInfo->layerCount;
                 mdata.mipLevels  = capturedResourceInfo->mipLevels;
-                mdata.miscFlags  = 0;  // Do not consider cudemap currently
+                mdata.miscFlags  = ((capturedResourceInfo->imageViewType == VK_IMAGE_VIEW_TYPE_CUBE) ||
+                                    (capturedResourceInfo->imageViewType == VK_IMAGE_VIEW_TYPE_CUBE_ARRAY)) ?
+                                    TEX_MISC_TEXTURECUBE : 0;
                 mdata.miscFlags2 = 0;
                 mdata.format     = capturedResourceInfo->format;
                 mdata.dimension  = TEX_DIMENSION_TEXTURE2D;
@@ -2660,12 +2665,12 @@ namespace VulkanTex
                 break;
             }
 
-            case VK_IMAGE_TYPE_3D:
+            case VK_IMAGE_VIEW_TYPE_3D:
             {
                 mdata.width      = capturedResourceInfo->subresourceInfoArray[0].width;
                 mdata.height     = capturedResourceInfo->subresourceInfoArray[0].height;
-                mdata.depth      = capturedResourceInfo->layerCount;  // Do not consider 3D image currently
-                mdata.arraySize  = capturedResourceInfo->layerCount;
+                mdata.depth      = capturedResourceInfo->layerCount;
+                mdata.arraySize  = 1;
                 mdata.mipLevels  = capturedResourceInfo->mipLevels;
                 mdata.miscFlags  = 0;
                 mdata.miscFlags2 = 0;
@@ -2705,17 +2710,17 @@ namespace VulkanTex
                         return false;
                     }
 
-                    MemoryCopyInfo dstDataInfo = {};
-                    MemoryCopyInfo srcDataInfo = {};
-                    SubresourceInfo subresInfo = capturedResourceInfo->subresourceInfoArray[dindex];
-                    size_t         memOffset   = subresInfo.memoryOffset;
-                    size_t         memSize     = subresInfo.memorySize;
+                    MemoryCopyInfo  dstDataInfo = {};
+                    MemoryCopyInfo  srcDataInfo = {};
+                    SubresourceInfo subresInfo  = capturedResourceInfo->subresourceInfoArray[dindex];
+                    size_t          memOffset   = subresInfo.memoryOffset;
+                    size_t          memSize     = subresInfo.memorySize;
 
                     dstDataInfo.data       = img->pixels;
                     dstDataInfo.rowPitch   = img->rowPitch;
                     dstDataInfo.slicePitch = img->slicePitch;
                     srcDataInfo.data       = mappedData + memOffset;
-                    srcDataInfo.rowPitch   = BitsPerPixel(capturedResourceInfo->format) / 8;
+                    srcDataInfo.rowPitch   = subresInfo.width * BitsPerPixel(capturedResourceInfo->format) / 8;
                     srcDataInfo.slicePitch = memSize;
 
                     MemcpySubresource(&dstDataInfo,
@@ -2752,84 +2757,10 @@ namespace VulkanTex
         return SaveToDDSFile(&image, 1, mdata, flags, szFile);
     }
 
-
-    //=====================================================================================
-    // Compatability helpers
-    //=====================================================================================
-    bool GetMetadataFromTGAMemory(const uint8_t* pSource, size_t size, TexMetadata& metadata) noexcept
-    {
-        return GetMetadataFromTGAMemory(pSource, size, TGA_FLAGS_NONE, metadata);
-    }
-
-
-    bool GetMetadataFromTGAFile(const char* szFile, TexMetadata& metadata) noexcept
-    {
-        return GetMetadataFromTGAFile(szFile, TGA_FLAGS_NONE, metadata);
-    }
-
-
-    bool LoadFromTGAMemory(const uint8_t* pSource, size_t size, TexMetadata* metadata, ScratchImage& image) noexcept
-    {
-        return LoadFromTGAMemory(pSource, size, TGA_FLAGS_NONE, metadata, image);
-    }
-
-
-    bool LoadFromTGAFile(const char* szFile, TexMetadata* metadata, ScratchImage& image) noexcept
-    {
-        return LoadFromTGAFile(szFile, TGA_FLAGS_NONE, metadata, image);
-    }
-
-
-    bool SaveToTGAMemory(const Image& image, Blob& blob, const TexMetadata* metadata) noexcept
-    {
-        return SaveToTGAMemory(image, TGA_FLAGS_NONE, blob, metadata);
-    }
-
-
-    bool SaveToTGAFile(const Image& image, const char* szFile, const TexMetadata* metadata) noexcept
-    {
-        return SaveToTGAFile(image, TGA_FLAGS_NONE, szFile, metadata);
-    }
-
     //=====================================================================================
     // C++17 helpers
     //=====================================================================================
 #ifdef __cpp_lib_byte
-    bool GetMetadataFromDDSMemory(const std::byte* pSource, size_t size, DDS_FLAGS flags, TexMetadata& metadata) noexcept
-    {
-        return GetMetadataFromDDSMemory(reinterpret_cast<const uint8_t*>(pSource), size, flags, metadata);
-    }
-
-
-    bool LoadFromDDSMemory(const std::byte* pSource, size_t size, DDS_FLAGS flags, TexMetadata* metadata, ScratchImage& image) noexcept
-    {
-        return LoadFromDDSMemory(reinterpret_cast<const uint8_t*>(pSource), size, flags, metadata, image);
-    }
-
-
-    bool GetMetadataFromDDSMemoryEx(const std::byte* pSource, size_t size, DDS_FLAGS flags, TexMetadata& metadata, DDSMetaData* ddPixelFormat) noexcept
-    {
-        return GetMetadataFromDDSMemoryEx(reinterpret_cast<const uint8_t*>(pSource), size, flags, metadata, ddPixelFormat);
-    }
-
-
-    bool LoadFromDDSMemoryEx(const std::byte* pSource, size_t size, DDS_FLAGS flags, TexMetadata* metadata, DDSMetaData* ddPixelFormat, ScratchImage& image) noexcept
-    {
-        return LoadFromDDSMemoryEx(reinterpret_cast<const uint8_t*>(pSource), size, flags, metadata, ddPixelFormat, image);
-    }
-
-    bool GetMetadataFromTGAMemory(const std::byte* pSource, size_t size, TGA_FLAGS flags, TexMetadata& metadata) noexcept
-    {
-        return GetMetadataFromTGAMemory(reinterpret_cast<const uint8_t*>(pSource), size, flags, metadata);
-    }
-
-
-    bool LoadFromTGAMemory(const std::byte* pSource, size_t size, TGA_FLAGS flags, TexMetadata* metadata, ScratchImage& image) noexcept
-    {
-        return LoadFromTGAMemory(reinterpret_cast<const uint8_t*>(pSource), size, flags, metadata, image);
-    }
-
-
     bool EncodeDDSHeader(const TexMetadata& metadata, DDS_FLAGS flags, std::byte* pDestination, size_t maxsize, size_t& required) noexcept
     {
         return EncodeDDSHeader(metadata, flags, reinterpret_cast<uint8_t*>(pDestination), maxsize, required);
@@ -2841,234 +2772,5 @@ namespace VulkanTex
         return EncodeDDSHeader(metadata, flags, static_cast<uint8_t*>(nullptr), maxsize, required);
     }
 #endif // __cpp_lib_byte
-
-    //-------------------------------------------------------------------------------------
-    // Copies an image row with optional clearing of alpha value to 1.0
-    // (can be used in place as well) otherwise copies the image row unmodified.
-    //-------------------------------------------------------------------------------------
-    void CopyScanline(
-        void* pDestination,
-        size_t outSize,
-        const void* pSource,
-        size_t inSize,
-        VkFormat format,
-        uint32_t tflags) noexcept
-    {
-        assert(pDestination && outSize > 0);
-        assert(pSource && inSize > 0);
-        assert(IsValid(format) && !IsPalettized(format));
-
-        if (tflags & TEXP_SCANLINE_SETALPHA)
-        {
-            switch (static_cast<int>(format))
-            {
-                //-----------------------------------------------------------------------------
-                case VK_FORMAT_R32G32B32A32_SFLOAT:
-                case VK_FORMAT_R32G32B32A32_UINT:
-                case VK_FORMAT_R32G32B32A32_SINT:
-                {
-                    if (inSize >= 16 && outSize >= 16)
-                    {
-                        uint32_t alpha;
-                        if (format == VK_FORMAT_R32G32B32A32_SFLOAT)
-                            alpha = 0x3f800000;
-                        else if (format == VK_FORMAT_R32G32B32A32_SINT)
-                            alpha = 0x7fffffff;
-                        else
-                            alpha = 0xffffffff;
-
-                        if (pDestination == pSource)
-                        {
-                            auto dPtr = static_cast<uint32_t*>(pDestination);
-                            for (size_t count = 0; count < (outSize - 15); count += 16)
-                            {
-                                dPtr += 3;
-                                *(dPtr++) = alpha;
-                            }
-                        }
-                        else
-                        {
-                            const uint32_t * __restrict sPtr = static_cast<const uint32_t*>(pSource);
-                            uint32_t * __restrict dPtr = static_cast<uint32_t*>(pDestination);
-                            const size_t size = std::min<size_t>(outSize, inSize);
-                            for (size_t count = 0; count < (size - 15); count += 16)
-                            {
-                                *(dPtr++) = *(sPtr++);
-                                *(dPtr++) = *(sPtr++);
-                                *(dPtr++) = *(sPtr++);
-                                *(dPtr++) = alpha;
-                                ++sPtr;
-                            }
-                        }
-                    }
-                    return;
-                }
-
-                //-----------------------------------------------------------------------------
-                case VK_FORMAT_R16G16B16A16_SFLOAT:
-                case VK_FORMAT_R16G16B16A16_UNORM:
-                case VK_FORMAT_R16G16B16A16_UINT:
-                case VK_FORMAT_R16G16B16A16_SNORM:
-                case VK_FORMAT_R16G16B16A16_SINT:
-                {
-                    if (inSize >= 8 && outSize >= 8)
-                    {
-                        uint16_t alpha;
-                        if (format == VK_FORMAT_R16G16B16A16_SFLOAT)
-                            alpha = 0x3c00;
-                        else if (format == VK_FORMAT_R16G16B16A16_SNORM || format == VK_FORMAT_R16G16B16A16_SINT)
-                            alpha = 0x7fff;
-                        else
-                            alpha = 0xffff;
-
-                        if (pDestination == pSource)
-                        {
-                            auto dPtr = static_cast<uint16_t*>(pDestination);
-                            for (size_t count = 0; count < (outSize - 7); count += 8)
-                            {
-                                dPtr += 3;
-                                *(dPtr++) = alpha;
-                            }
-                        }
-                        else
-                        {
-                            const uint16_t * __restrict sPtr = static_cast<const uint16_t*>(pSource);
-                            uint16_t * __restrict dPtr = static_cast<uint16_t*>(pDestination);
-                            const size_t size = std::min<size_t>(outSize, inSize);
-                            for (size_t count = 0; count < (size - 7); count += 8)
-                            {
-                                *(dPtr++) = *(sPtr++);
-                                *(dPtr++) = *(sPtr++);
-                                *(dPtr++) = *(sPtr++);
-                                *(dPtr++) = alpha;
-                                ++sPtr;
-                            }
-                        }
-                    }
-                    return;
-                }
-
-                //-----------------------------------------------------------------------------
-                case VK_FORMAT_A2B10G10R10_UNORM_PACK32:
-                case VK_FORMAT_A2B10G10R10_UINT_PACK32:
-                {
-                    if (inSize >= 4 && outSize >= 4)
-                    {
-                        if (pDestination == pSource)
-                        {
-                            auto dPtr = static_cast<uint32_t*>(pDestination);
-                            for (size_t count = 0; count < (outSize - 3); count += 4)
-                            {
-                                *dPtr |= 0xC0000000;
-                                ++dPtr;
-                            }
-                        }
-                        else
-                        {
-                            const uint32_t * __restrict sPtr = static_cast<const uint32_t*>(pSource);
-                            uint32_t * __restrict dPtr = static_cast<uint32_t*>(pDestination);
-                            const size_t size = std::min<size_t>(outSize, inSize);
-                            for (size_t count = 0; count < (size - 3); count += 4)
-                            {
-                                *(dPtr++) = *(sPtr++) | 0xC0000000;
-                            }
-                        }
-                    }
-                    return;
-                }
-
-                //-----------------------------------------------------------------------------
-                case VK_FORMAT_R8G8B8A8_UNORM:
-                case VK_FORMAT_R8G8B8A8_SRGB:
-                case VK_FORMAT_R8G8B8A8_UINT:
-                case VK_FORMAT_R8G8B8A8_SNORM:
-                case VK_FORMAT_R8G8B8A8_SINT:
-                case VK_FORMAT_B8G8R8A8_UNORM:
-                case VK_FORMAT_B8G8R8A8_SRGB:
-                {
-                    if (inSize >= 4 && outSize >= 4)
-                    {
-                        const uint32_t alpha = (format == VK_FORMAT_R8G8B8A8_SNORM || format == VK_FORMAT_R8G8B8A8_SINT) ? 0x7f000000 : 0xff000000;
-
-                        if (pDestination == pSource)
-                        {
-                            auto dPtr = static_cast<uint32_t*>(pDestination);
-                            for (size_t count = 0; count < (outSize - 3); count += 4)
-                            {
-                                uint32_t t = *dPtr & 0xFFFFFF;
-                                t |= alpha;
-                                *(dPtr++) = t;
-                            }
-                        }
-                        else
-                        {
-                            const uint32_t * __restrict sPtr = static_cast<const uint32_t*>(pSource);
-                            uint32_t * __restrict dPtr = static_cast<uint32_t*>(pDestination);
-                            const size_t size = std::min<size_t>(outSize, inSize);
-                            for (size_t count = 0; count < (size - 3); count += 4)
-                            {
-                                uint32_t t = *(sPtr++) & 0xFFFFFF;
-                                t |= alpha;
-                                *(dPtr++) = t;
-                            }
-                        }
-                    }
-                    return;
-                }
-
-                //-----------------------------------------------------------------------------
-                case VK_FORMAT_A1R5G5B5_UNORM_PACK16:
-                case VK_FORMAT_A4R4G4B4_UNORM_PACK16:
-                case VK_FORMAT_R4G4B4A4_UNORM_PACK16:
-                {
-                    if (inSize >= 2 && outSize >= 2)
-                    {
-                        uint16_t alpha;
-                        if (format == VK_FORMAT_A4R4G4B4_UNORM_PACK16)
-                            alpha = 0xF000;
-                        else if (format == VK_FORMAT_R4G4B4A4_UNORM_PACK16)
-                            alpha = 0x000F;
-                        else
-                            alpha = 0x8000;
-
-                        if (pDestination == pSource)
-                        {
-                            auto dPtr = static_cast<uint16_t*>(pDestination);
-                            for (size_t count = 0; count < (outSize - 1); count += 2)
-                            {
-                                *(dPtr++) |= alpha;
-                            }
-                        }
-                        else
-                        {
-                            const uint16_t * __restrict sPtr = static_cast<const uint16_t*>(pSource);
-                            uint16_t * __restrict dPtr = static_cast<uint16_t*>(pDestination);
-                            const size_t size = std::min<size_t>(outSize, inSize);
-                            for (size_t count = 0; count < (size - 1); count += 2)
-                            {
-                                *(dPtr++) = uint16_t(*(sPtr++) | alpha);
-                            }
-                        }
-                    }
-                    return;
-                }
-
-                //-----------------------------------------------------------------------------
-                case VK_FORMAT_A8_UNORM:
-                    memset(pDestination, 0xff, outSize);
-                    return;
-
-                default:
-                    break;
-            }
-        }
-
-        // Fall-through case is to just use memcpy (assuming this is not an in-place operation)
-        if (pDestination == pSource)
-            return;
-
-        const size_t size = std::min<size_t>(outSize, inSize);
-        memcpy(pDestination, pSource, size);
-    }
 }
 
